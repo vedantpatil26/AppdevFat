@@ -1,36 +1,40 @@
-node {
-    def app
-
-    stage('Clone repository') {
-        /* Let's make sure we have the repository cloned to our workspace */
-
-        checkout scm
+pipeline {
+    agent any
+    environment {
+        PATH = "C:/Maven/apache-maven-3.9.5/bin$PATH"
+	JAVA_HOME = "C:/Java/jdk-17.0.5"
+        // Add other environment variables as needed
     }
-
-    stage('Build image') {
-        /* This builds the actual image; synonymous to
-         * docker build on the command line */
-
-        app = docker.build("getintodevops/hellonode")
-    }
-
-    stage('Test image') {
-        /* Ideally, we would run a test framework against our image.
-         * For this example, we're using a Volkswagen-type approach ;-) */
-
-        app.inside {
-            sh 'echo "Tests passed"'
+    stages {
+        stage('Checkout') {
+            steps {
+                checkout scm
+            }
         }
-    }
-
-    stage('Push image') {
-        /* Finally, we'll push the image with two tags:
-         * First, the incremental build number from Jenkins
-         * Second, the 'latest' tag.
-         * Pushing multiple tags is cheap, as all the layers are reused. */
-        docker.withRegistry('https://registry.hub.docker.com', 'docker-hub-credentials') {
-            app.push("${env.BUILD_NUMBER}")
-            app.push("latest")
+        stage('Build') {
+            steps {
+                bat "C:\\Windows\\System32\\cmd.exe /c mvn clean install"
+            }
+        }
+        stage('Build Image'){
+            steps {
+                bat "C:\\Windows\\System32\\cmd.exe /c docker build -t my-maven-docker-project.jar ."
+            }
+        }
+        stage("Docker Login"){
+            steps {
+                bat "C:\\Windows\\System32\\cmd.exe /c docker login --username m0inak --password Docker@moinak"
+            }
+        }
+        stage("Docker add tag"){
+            steps {
+                bat "C:\\Windows\\System32\\cmd.exe /c docker tag my-maven-docker-project.jar m0inak/my-maven-docker-project.jar:tag"
+            }
+        }
+        stage("Push Image"){
+            steps {
+                bat "C:\\Windows\\System32\\cmd.exe /c docker push m0inak/my-maven-docker-project.jar:tag"
+            }
         }
     }
 }
